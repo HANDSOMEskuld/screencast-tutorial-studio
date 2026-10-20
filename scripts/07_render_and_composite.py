@@ -9,8 +9,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 from common import load, run, h264_args, need
 
 
-def hf_render(proj: Path, out: Path, fps: int, quality: str):
-    cmd = ["npx", "-y", "hyperframes", "render", str(proj), "--format", "webm", "--fps", str(fps), "--quality", quality, "-o", str(out)]
+def hf_render(proj: Path, out: Path, fps: int, quality: str, cpu_used: int = 4):
+    cmd = ["npx", "-y", "hyperframes", "render", str(proj), "--format", "webm", "--fps", str(fps), "--quality", quality,
+           "--vp9-cpu-used", str(cpu_used), "-o", str(out)]
     r = subprocess.run(cmd, text=True)
     if r.returncode != 0 or not out.exists():
         sys.exit("HyperFrames 渲染失败：先运行 `npx hyperframes browser ensure` 和 `npx hyperframes check`")
@@ -27,7 +28,8 @@ def main():
     ov, mk = w / "overlay.webm", w / "mask.webm"
     if not a.skip_render:
         hf_render(w / "overlay_project", ov, a.fps, a.quality)
-        if om["glass"] == "real": hf_render(w / "mask_project", mk, a.fps, a.quality)
+        # 遮罩只是形状：用 draft 质量 + 更快的 VP9 档位 + (06 步生成的)半分辨率，ffmpeg 合成时再放大
+        if om["glass"] == "real": hf_render(w / "mask_project", mk, a.fps, "draft", 5)
     cut = w / "cut_video.mp4"; info = load(w / "project.json")
     W, H = info["width"], info["height"]; ext = max(0.0, tl["duration"] - tl["base_duration"])
     base = f"[0:v]scale={W}:{H},setsar=1" + (f",tpad=stop_mode=clone:stop_duration={ext:.2f}" if ext else "") + "[base]"
