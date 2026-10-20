@@ -12,7 +12,7 @@ npx hyperframes browser ensure                                          # 渲染
 可选增强（强烈建议一并安装，定制 B-roll 时用）：`heygen-com/hyperframes` 仓库的 `skills/*` 复制到 `~/.claude/skills/`。
 
 ## 交接文档
-`REQUIREMENTS.md`（需求）· `HANDOFF.md`（进度/待办）· `AGENTS.md`（Agent 指引）· `PROMPTS.md`（提示词，含换机器引导）
+`REQUIREMENTS.md`（需求）· `ORIGINAL_REQUEST.md`（最初请求原文）· `HANDOFF.md`（进度/待办）· `AGENTS.md`（Agent 指引）· `PROMPTS.md`（提示词，含换机器引导）
 
 ## 状态
 - ✅ 01–09 已在 49s 合成样片上全部跑通，真毛玻璃合成已目视确认
