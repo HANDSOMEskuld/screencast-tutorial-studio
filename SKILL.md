@@ -60,15 +60,24 @@ description: 录屏教程视频的 AI 全流程剪辑师（整合 HyperFrames + 
 - **/hyperframes-registry**：需要现成特效/转场块（如光效、粒子）时搜索安装。
 - **/media-use**：需要生成/获取图片、图标、素材时使用。
 - **OpenMontage（/app/OpenMontage）**：需要 AI 生成配乐/配音/图片时，参考 `/app/OpenMontage/tools/audio/`（music_gen、elevenlabs 等，需 API Key）。本技能不依赖它即可完成全流程。
-- 参考资料：`references/` 下 7 份文档；设计来源与许可见 `references/CREDITS.md`。
+- 参考资料：`references/` 下各文档；设计目标见 `references/00-design-goals.md`，来源与许可见 `references/CREDITS.md`。
+
+## 已知限制
+- CPU 渲染叠层较慢（1280x720 约 11 帧/秒），先 `--glass fake --quality draft --fps 24` 预览，定稿再出真毛玻璃终版。
+- 默认 BGM 为程序合成的简易版；有授权曲库时用 `--bgm 文件`。
+- 4K / 60fps / 竖屏(9:16)路径未充分验证；真实长录屏的口水词阈值可用 `--preset tight|natural` 调整。
+
+## 自检
+`~/.venvs/studio/bin/python examples/make_sample.py /tmp/sample`，再依次跑 01(`--skip-transcribe`)→09，确认环境与流水线可用（音画偏移应检出 -0.5s）。
 
 ## 目录
 
 ```
 SKILL.md
 scripts/   setup_env.sh common.py 01…09_*.py gen_bgm.py
+examples/  make_sample.py(生成 60s 合成样例，用于自检/回归)
 templates/ overlay.html(HyperFrames 叠层模板：章节条/字幕/提示框/圈选/B-roll库/CTA)  gsap.min.js
 assets/sfx/ 20 个音效(whoosh/pop/chime/error/riser/impact…)+ manifest.json
-references/ 01-ai-analysis-playbook 02-visual-system-apple-glass 03-broll-library
+references/ 00-design-goals original-request 01-ai-analysis-playbook 02-visual-system-apple-glass 03-broll-library
             04-audio-design 05-captions-chapters 06-qa-checklist plan-schema CREDITS
 ```
