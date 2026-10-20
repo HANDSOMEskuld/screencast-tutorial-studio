@@ -1,15 +1,9 @@
-# Agent 指引
+# Agent 使用指引
 
-这是 `screencast-tutorial-studio`：录屏教程视频 AI 剪辑技能。接手前**按顺序阅读**：
-1. `REQUIREMENTS.md`：用户的完整需求（北极星）
-2. `HANDOFF.md`：当前进度、待办、踩坑、git 流程
-3. `SKILL.md`：9 步工作流与硬规则
-4. `references/`：分析手册、视觉系统、B-roll 库、音频、字幕、质检
+本仓库是一个 Agent 技能：**screencast-tutorial-studio**（录屏教程视频 AI 剪辑）。入口是 `SKILL.md`。
 
-## 规则
-- 先 `bash scripts/setup_env.sh` 和 `npx hyperframes browser ensure`，用 `~/.venvs/studio/bin/python` 运行脚本。
-- 改动必须在小样本上实际跑过并目视检查（`npx hyperframes snapshot` / `qa/*.jpg`），不要只改代码不验证。
-- 在新分支 `improve/<主题>` 上工作，提交后 push 并 `gh pr create --fill`；**不要直接推 main**。
-- 每次会话结束更新 `HANDOFF.md`（状态、新踩坑、剩余待办）。
-- 不在仓库或日志中写入任何 token；认证用 `gh auth login` 或环境变量 `GH_TOKEN`。
-- 用中文与用户沟通。
+- 用户要剪辑软件演示 / 操作教程类录屏时，读取 `SKILL.md` 并严格按 9 步流程执行。
+- 首次使用：`bash scripts/setup_env.sh` 与 `npx hyperframes browser ensure`；脚本一律用 `~/.venvs/studio/bin/python` 运行。
+- 阶段 2、5b、6b、9b 由 Agent 亲自判断（看转录与联系表图片、校对字幕、看渲染截图），不要只靠脚本。
+- 设计目标见 `references/00-design-goals.md`；其他参考文档见 `references/`。
+- 与用户沟通使用中文；不要把任何 token 写入文件、日志或 git remote。
