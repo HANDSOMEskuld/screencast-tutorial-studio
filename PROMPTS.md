@@ -1,5 +1,19 @@
 # AI 提示词
 
+## 0. 引导提示词（换机器时粘贴给那台机器的 AI Agent）
+前提：那台机器已装 git、gh、node、python，并已登录 GitHub（`gh auth login`，或设置新的环境变量 `GH_TOKEN`），且执行过一次 `gh auth setup-git`。
+```
+请接手并继续完善我的 AI 视频剪辑技能项目，全程自动完成，不要问我无关问题：
+1. 拉取项目：git clone https://github.com/HANDSOMEskuld/screencast-tutorial-studio ~/.claude/skills/screencast-tutorial-studio（已存在则 git pull）。
+2. 依次完整阅读 AGENTS.md、REQUIREMENTS.md、HANDOFF.md、SKILL.md 和 references/ 下所有文档。REQUIREMENTS.md 是我的原始需求，不得偏离。
+3. 运行 scripts/setup_env.sh 和 npx hyperframes browser ensure 准备环境。
+4. 按 HANDOFF.md 的"已知问题/待办"从高到低逐项改进。每项都要在小样本上实际跑通并用图片检查效果，不要只改代码。
+   如果我提供了真实录屏，优先用它完整跑一遍 9 步。
+5. 新建分支 improve/<主题>，提交并 push，用 gh pr create --fill 创建 PR，把 PR 链接发给我。不要直接推 main。
+6. 结束前更新 HANDOFF.md（进度、新踩坑、剩余待办），并包含在 PR 里。
+7. 不要把任何 token 写进文件或 git remote。
+```
+
 ## A. 剪辑一个新视频
 ```
 使用 screencast-tutorial-studio 技能剪辑我的录屏教程。
