@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=__W__, height=__H__" />
+<script src="gsap.min.js"></script>
+<style>
+  @font-face { font-family:"PingFang SC"; src:local("PingFang SC"); }
+  @font-face { font-family:"Noto Sans CJK SC"; src:local("Noto Sans CJK SC"); }
+  @font-face { font-family:"Noto Sans SC"; src:local("Noto Sans SC"); }
+  @font-face { font-family:"Apple Color Emoji"; src:local("Apple Color Emoji"); }
+  @font-face { font-family:"Noto Color Emoji"; src:local("Noto Color Emoji"); }
+  @font-face { font-family:"Segoe UI Emoji"; src:local("Segoe UI Emoji"); }
+  @font-face { font-family:"SF Pro Display"; src:local("SF Pro Display"); }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:__W__px; height:__H__px; overflow:hidden; background:transparent; }
+  #root { position:relative; width:__W__px; height:__H__px; overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Noto Sans CJK SC","Noto Sans SC",Inter,sans-serif; }
+  /* 设计坐标系 1920 x DH，整体缩放到真实分辨率 */
+  #stage { position:absolute; left:0; top:0; width:1920px; height:__DH__px; transform-origin:0 0; transform:scale(__K__); }
+  #stage { --accent:__ACCENT__; --green:#30D158; --orange:#FF9F0A; --red:#FF453A; --yellow:#FFD60A; --purple:#BF5AF2;
+    --fg:#fff; --fg2:rgba(255,255,255,.78); --fg3:rgba(255,255,255,.46);
+    --fill:__FILL__; --stroke:rgba(255,255,255,.28); }
+  #stage.light { --fg:#14161c; --fg2:rgba(20,22,28,.72); --fg3:rgba(20,22,28,.42); --stroke:rgba(255,255,255,.7); }
+  .abs { position:absolute; opacity:0; }
+  /* ===== Apple 液态玻璃 ===== */
+  .glass { position:absolute; background:var(--fill); border:1.5px solid var(--stroke); border-radius:28px; color:var(--fg);
+    box-shadow:0 24px 64px rgba(0,0,0,.38), 0 2px 8px rgba(0,0,0,.2), inset 0 1.5px 0 rgba(255,255,255,.42), inset 0 -1px 0 rgba(255,255,255,.08); }
+  .glass::before { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+    background:linear-gradient(140deg, rgba(255,255,255,.26) 0%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 70%, rgba(255,255,255,.08) 100%); }
+  .row { display:flex; align-items:center; }
+  .emo { font-style:normal; font-family:"Apple Color Emoji","Noto Color Emoji","Segoe UI Emoji",sans-serif; }
+  /* 章节进度条 */
+  #bar { left:90px; top:20px; width:1740px; height:58px; border-radius:29px; padding:7px; opacity:0; }
+  .seg { position:absolute; top:7px; height:44px; border-radius:22px; overflow:hidden; background:rgba(255,255,255,.07);
+    border:1.5px solid rgba(255,255,255,.12); }
+  .seg .fill { position:absolute; inset:0; background:var(--accent); opacity:.42; transform-origin:0 50%; transform:scaleX(0); }
+  .seg .lab { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:8px; font-size:20px; font-weight:650;
+    letter-spacing:-.2px; color:var(--fg3); white-space:nowrap; }
+  .seg .lab .n { font-size:15px; opacity:.8; font-variant-numeric:tabular-nums; }
+  .seg .chk { opacity:0; color:var(--green); font-weight:900; }
+  /* 字幕 */
+  .cap { left:0; width:1920px; display:flex; justify-content:center; bottom:64px; }
+  .cap span { max-width:1500px; padding:12px 30px 14px; border-radius:20px; font-size:42px; font-weight:700; letter-spacing:.5px; line-height:1.28;
+    color:#fff; background:rgba(10,12,18,.58); text-shadow:0 2px 10px rgba(0,0,0,.5); text-align:center; }
+  .cap em { font-style:normal; color:var(--yellow); }
+  /* 提示框 */
+  .callout { width:470px; padding:24px 26px 28px; overflow:hidden; }
+  .callout .ic { width:58px; height:58px; border-radius:18px; background:var(--accent); font-size:32px; justify-content:center; flex:none; box-shadow:0 8px 20px rgba(0,0,0,.3); }
+  .callout .tt { font-size:31px; font-weight:750; letter-spacing:-.3px; line-height:1.2; }
+  .callout .bd { margin-top:14px; font-size:25px; font-weight:500; line-height:1.4; color:var(--fg2); }
+  .callout .timer { position:absolute; left:26px; right:26px; bottom:12px; height:4px; border-radius:2px; background:rgba(255,255,255,.18); overflow:hidden; }
+  .callout .timer i { position:absolute; inset:0; background:var(--accent); transform-origin:0 50%; }
+  .ring { border:5px solid var(--accent); border-radius:18px; box-shadow:0 0 0 6px rgba(255,255,255,.14), 0 0 40px var(--accent); }
+  .dim { background:rgba(0,0,0,.42); }
+  .conn { overflow:visible; pointer-events:none; }
+  .badge { height:56px; padding:0 28px 0 12px; border-radius:28px; gap:14px; }
+  .badge .num { width:36px; height:36px; border-radius:50%; background:var(--accent); font-weight:800; font-size:22px; justify-content:center; color:#fff; }
+  .badge .t { font-size:26px; font-weight:700; }
+  .bignote { padding:34px 60px; text-align:center; border-radius:40px; }
+  .bignote .m { font-size:68px; font-weight:850; letter-spacing:-1px; line-height:1.15; }
+  .bignote .s { margin-top:12px; font-size:30px; font-weight:600; color:var(--fg2); }
+  .hook { padding:40px 70px 44px; border-radius:44px; text-align:center; max-width:1500px; }
+  .hook .h { font-size:92px; font-weight:900; letter-spacing:-2px; line-height:1.12; }
+  .hook .h span { display:inline-block; }
+  .hook .s { margin-top:16px; font-size:38px; font-weight:600; color:var(--fg2); }
+  .hook .u { position:absolute; left:70px; right:70px; bottom:26px; height:8px; border-radius:4px; background:var(--accent); transform-origin:0 50%; opacity:.9; }
+  /* B-roll */
+  .broll { overflow:hidden; border-radius:34px; }
+  .broll .ttl { position:absolute; left:34px; top:24px; font-size:26px; font-weight:700; color:var(--fg2); letter-spacing:.5px; }
+  .node { position:absolute; width:150px; text-align:center; opacity:0; }
+  .node .b { width:112px; height:112px; margin:0 auto; border-radius:32px; background:rgba(255,255,255,.14); border:1.5px solid rgba(255,255,255,.32);
+    font-size:58px; justify-content:center; box-shadow:0 12px 30px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.4); }
+  .node .l { margin-top:14px; font-size:25px; font-weight:700; line-height:1.2; }
+  .lineA { position:absolute; height:6px; border-radius:3px; background:var(--accent); transform-origin:0 50%; opacity:.9; }
+  .dot { position:absolute; width:26px; height:26px; border-radius:50%; background:#fff; box-shadow:0 0 24px var(--accent), 0 0 8px #fff; opacity:0; }
+  .cmp { position:absolute; top:76px; bottom:34px; width:calc(50% - 46px); border-radius:26px; padding:26px 30px; opacity:0; }
+  .cmp h4 { font-size:34px; font-weight:800; margin-bottom:18px; }
+  .cmp li { list-style:none; font-size:27px; font-weight:600; line-height:1.5; margin-top:10px; opacity:0; }
+  .bignum { position:absolute; left:0; right:0; text-align:center; font-weight:900; font-variant-numeric:tabular-nums; letter-spacing:-3px; }
+  .cki { position:absolute; left:48px; right:48px; font-size:34px; font-weight:700; gap:20px; opacity:0; }
+  .cki .box { width:46px; height:46px; border-radius:14px; border:3px solid rgba(255,255,255,.5); justify-content:center; font-size:30px; color:#fff; }
+  .pill { height:52px; padding:0 24px; border-radius:26px; font-size:26px; font-weight:750; gap:10px; }
+  .cta .btn { width:230px; height:150px; border-radius:34px; flex-direction:column; justify-content:center; gap:8px; position:relative; }
+  .cta .btn .e { font-size:54px; } .cta .btn .w { font-size:28px; font-weight:800; }
+  /* mask 模式：只输出玻璃区域形状，供 ffmpeg 做真实背景模糊 */
+  .mask #stage *, .mask #root { color:transparent !important; text-shadow:none !important; }
+  .mask #stage *:not(.glass) { background:transparent !important; border-color:transparent !important; box-shadow:none !important; filter:none !important; }
+  .mask #stage .glass { background:#fff !important; border-color:transparent !important; box-shadow:none !important; }
+  .mask #stage .glass::before { display:none; }
+  .mask #stage svg *, .mask .emo, .mask img { visibility:hidden !important; }
+  .mask body, .mask html { background:#000; }
+</style>
+</head>
+<body class="__BODYCLASS__">
+<div id="root" data-composition-id="main" data-start="0" data-width="__W__" data-height="__H__" data-duration="__DUR__">
+  <div id="stage" class="__STAGECLASS__"></div>
+</div>
+<script>
+const P = __DATA__;
+const MASK = document.body.classList.contains("mask");
+const DH = __DH__;
+const tl = gsap.timeline({ paused: true });
+const stage = document.getElementById("stage");
+const E = (cls, html, parent, tag) => { const e = document.createElement(tag || "div"); e.className = cls || ""; if (html != null) e.innerHTML = html; (parent || stage).appendChild(e); return e; };
+const css = (e, o) => { Object.assign(e.style, o); return e; };
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const esc = s => String(s ?? "").replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const SPRING = "back.out(1.5)", SMOOTH = "power3.out", POP = "elastic.out(1,0.55)";
+// 通用：t 时刻入场，t+dur 出场（入场/出场不使用 CSS transform 初值，避免与 GSAP 冲突）
+function life(el, t, dur, from, to, inD = 0.5, outD = 0.35, ease = SPRING) {
+  tl.fromTo(el, Object.assign({ opacity: 0 }, from), Object.assign({ opacity: 1, duration: inD, ease, immediateRender: true }, to), t);
+  tl.to(el, { opacity: 0, y: "-=10", scale: 0.97, duration: outD, ease: "power2.in" }, Math.max(t + inD, t + dur - outD));
+}
+
+/* ---------- 章节进度条（顶部，三态语义：已完成 / 进行中 / 未开始） ---------- */
+(function chapterBar() {
+  const cs = P.chapters; if (!cs.length) return;
+  const bar = css(E("glass", "", null), { left: "90px", top: "20px", width: "1740px", height: "58px", borderRadius: "29px", opacity: 0 });
+  bar.id = "bar";
+  const total = cs[cs.length - 1].end - cs[0].start, inner = 1740 - 14, gap = 8;
+  let x = 7;
+  cs.forEach((c, i) => {
+    const w = Math.max(70, (c.end - c.start) / total * (inner - gap * (cs.length - 1)));
+    const s = css(E("seg", "", bar), { left: x + "px", width: w + "px" });
+    const fill = E("fill", "", s);
+    const wide = w > 190;
+    const lab = E("lab", `<span class="chk emo" style="font-family:inherit">✓</span><span class="n">${String(i + 1).padStart(2, "0")}</span>${wide ? `<span>${esc(c.title)}</span>` : ""}`, s);
+    x += w + gap;
+    const t0 = c.start, t1 = c.end, d = Math.max(0.2, t1 - t0);
+    tl.set(s, { borderColor: "rgba(255,255,255,.12)" }, 0);
+    tl.to(lab, { color: "#fff", duration: 0.25 }, t0);
+    tl.to(s, { borderColor: "var(--accent)", boxShadow: MASK ? "none" : "0 0 18px var(--accent)", duration: 0.25 }, t0);
+    tl.fromTo(fill, { scaleX: 0 }, { scaleX: 1, duration: d, ease: "none", immediateRender: false }, t0);
+    tl.to(s, { borderColor: "rgba(48,209,88,.7)", boxShadow: "none", duration: 0.3 }, t1);
+    tl.to(fill, { backgroundColor: "#30D158", opacity: 0.32, duration: 0.3 }, t1);
+    tl.to(lab, { color: "#30D158", duration: 0.3 }, t1);
+    tl.to(lab.querySelector(".chk"), { opacity: 1, duration: 0.3 }, t1);
+  });
+  const t0 = cs[0].start;
+  tl.fromTo(bar, { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 0.7, ease: SPRING, immediateRender: true }, t0);
+  tl.to(bar, { opacity: 0, y: -24, duration: 0.5, ease: "power2.in" }, Math.max(t0 + 1, P.duration - 0.6 - (P.cta ? 0 : 0)));
+})();
+
+/* ---------- 字幕 ---------- */
+P.captions.forEach(c => {
+  const wrap = css(E("cap abs", "", null), { bottom: "64px" });
+  E("", esc(c.text).replace(/\*\*(.+?)\*\*/g, "<em>$1</em>"), wrap, "span");
+  tl.set(wrap, { opacity: 1 }, c.start); tl.set(wrap, { opacity: 0 }, c.end);
+  tl.fromTo(wrap.firstChild, { y: 10, scale: 0.98 }, { y: 0, scale: 1, duration: 0.18, ease: "power2.out", immediateRender: false }, c.start);
+});
+
+/* ---------- 开场 Hook ---------- */
+(function hook() {
+  const h = P.hook; if (!h || !h.headline) return;
+  const t = h.start, d = h.dur;
+  const card = css(E("glass hook abs", "", null), { left: "50%", top: Math.round(DH * 0.16) + "px", marginLeft: "-750px", width: "1500px" });
+  card.id = "hook"; const hd = E("h", "", card);
+  [...h.headline].forEach(ch => E("", ch === " " ? "&nbsp;" : esc(ch), hd, "span"));
+  if (h.sub) E("s", esc(h.sub), card);
+  const u = E("u", "", card);
+  tl.fromTo(card, { opacity: 0, scale: 0.9, y: 40 }, { opacity: 1, scale: 1, y: 0, duration: 0.6, ease: SPRING, immediateRender: true }, t);
+  tl.from(hd.children, { y: 36, opacity: 0, stagger: 0.035, duration: 0.45, ease: SMOOTH, immediateRender: false }, t + 0.1);
+  tl.fromTo(u, { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power3.inOut", immediateRender: false }, t + 0.5);
+  tl.to(card, { opacity: 0, y: -30, scale: 0.97, duration: 0.4, ease: "power2.in" }, t + d - 0.4);
+})();
+
+/* ---------- 提示框 / 圈选 / 步骤 / 大字报 ---------- */
+const TONE = { info: "var(--accent)", warn: "var(--red)", success: "var(--green)", tip: "var(--orange)" };
+function place(o, w, h) {
+  const pos = o.pos || "auto"; const m = 70;
+  if (o.at) return { x: o.at.x * 1920 - w / 2, y: o.at.y * DH - h / 2 };
+  if (pos === "left") return { x: m, y: 200 };
+  if (pos === "right-low") return { x: 1920 - m - w, y: Math.round(DH * 0.5) };
+  if (pos === "left-low") return { x: m, y: Math.round(DH * 0.5) };
+  if (o.ring && pos === "auto") return { x: (o.ring.x + o.ring.w / 2) > 0.5 ? m : 1920 - m - w, y: 200 };
+  return { x: 1920 - m - w, y: 200 };
+}
+P.overlays.forEach((o, i) => {
+  const t = o.start, d = o.dur;
+  if (o.type === "callout" || o.type === "ring") {
+    if (o.ring) {
+      const r = o.ring, rx = r.x * 1920, ry = r.y * DH, rw = r.w * 1920, rh = r.h * DH;
+      if (o.spot) {   // 聚光灯：四块暗幕围出高亮区
+        [[0, 0, 1920, ry], [0, ry + rh, 1920, DH - ry - rh], [0, ry, rx, rh], [rx + rw, ry, 1920 - rx - rw, rh]].forEach(b => {
+          const dm = css(E("dim abs", ""), { left: b[0] + "px", top: b[1] + "px", width: b[2] + "px", height: b[3] + "px" });
+          tl.to(dm, { opacity: 1, duration: 0.35 }, t); tl.to(dm, { opacity: 0, duration: 0.35 }, t + d - 0.35);
+        });
+      }
+      const ring = css(E("ring abs", ""), { left: rx - 10 + "px", top: ry - 10 + "px", width: rw + 20 + "px", height: rh + 20 + "px" });
+      tl.fromTo(ring, { opacity: 0, scale: 1.25 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)", immediateRender: true }, t);
+      tl.to(ring, { scale: 1.035, duration: 0.5, yoyo: true, repeat: Math.max(1, Math.floor((d - 1) / 1)), ease: "sine.inOut" }, t + 0.5);
+      tl.to(ring, { opacity: 0, duration: 0.3 }, t + d - 0.3);
+      o._ring = { rx, ry, rw, rh };
+    }
+    if (o.type === "callout") {
+      const card = E("glass callout abs", "", null);
+      card.innerHTML = `<div class="row" style="gap:18px"><div class="ic row emo" style="background:${TONE[o.tone || "info"]}">${o.icon || "💡"}</div><div class="tt">${esc(o.title)}</div></div>` +
+        (o.body ? `<div class="bd">${esc(o.body)}</div>` : "") + `<div class="timer"><i></i></div>`;
+      const w = 470, h = 150 + (o.body ? Math.ceil(o.body.length / 15) * 36 : 0), p = place(o, w, h);
+      css(card, { left: p.x + "px", top: p.y + "px" });
+      const dx = p.x > 960 ? 60 : -60;
+      life(card, t + 0.08, d, { x: dx, scale: 0.94 }, { x: 0, scale: 1 });
+      tl.from(card.querySelector(".ic"), { scale: 0.2, rotation: -25, duration: 0.7, ease: POP, immediateRender: false }, t + 0.2);
+      tl.fromTo(card.querySelector(".timer i"), { scaleX: 1 }, { scaleX: 0, duration: Math.max(0.5, d - 0.5), ease: "none", immediateRender: false }, t + 0.4);
+      if (o._ring) {   // 连接线：卡片 → 圈选框
+        const r = o._ring, cx = p.x > 960 ? p.x : p.x + w, cy = p.y + 40;
+        const tx = p.x > 960 ? r.rx + r.rw + 14 : r.rx - 14, ty = r.ry + r.rh / 2;
+        const svg = css(E("conn abs", `<svg width="1920" height="${DH}" style="position:absolute;left:0;top:0"><path d="M${cx},${cy} C${(cx + tx) / 2},${cy} ${(cx + tx) / 2},${ty} ${tx},${ty}" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-dasharray="1200" stroke-dashoffset="1200"/><circle cx="${tx}" cy="${ty}" r="9" fill="var(--accent)" opacity="0"/></svg>`), { left: "0", top: "0" });
+        const path = svg.querySelector("path"), cir = svg.querySelector("circle");
+        tl.set(svg, { opacity: 1 }, t); tl.set(svg, { opacity: 0 }, t + d - 0.25);
+        tl.fromTo(path, { strokeDashoffset: 1200 }, { strokeDashoffset: 0, duration: 0.55, ease: "power2.inOut", immediateRender: false }, t + 0.25);
+        tl.to(cir, { opacity: 1, duration: 0.15 }, t + 0.75);
+      }
+    }
+  }
+  if (o.type === "step") {
+    const b = css(E("glass badge row abs", `<div class="num row">${esc(o.num ?? "")}</div><div class="t">${esc(o.text)}</div>`, null), { left: "90px", top: "100px" });
+    life(b, t, d, { x: -50 }, { x: 0 }, 0.5, 0.3);
+  }
+  if (o.type === "bignote") {
+    const c = TONE[o.tone || "info"];
+    const n = css(E("glass bignote abs", `<div class="m">${esc(o.text)}</div>${o.sub ? `<div class="s">${esc(o.sub)}</div>` : ""}`, null), { left: "50%", top: Math.round(DH * 0.34) + "px", marginLeft: "-440px", width: "880px", borderColor: c });
+    life(n, t, d, { scale: 0.85, y: 30 }, { scale: 1, y: 0 }, 0.55, 0.4);
+    if (o.tone === "warn") tl.to(n, { x: "+=10", duration: 0.06, yoyo: true, repeat: 5, ease: "none" }, t + 0.5);
+  }
+});
+
+/* ---------- B-roll 动画库 ---------- */
+const R = rng(7);
+function brollShell(o) {
+  const full = o.mode === "full", w = full ? 1240 : 620, h = full ? 680 : 380;
+  const x = full ? (1920 - w) / 2 : (o.pos === "left" ? 70 : 1920 - 70 - w), y = full ? Math.round((DH - h) / 2) - 20 : 130;
+  const card = css(E("glass broll abs", "", null), { left: x + "px", top: y + "px", width: w + "px", height: h + "px" });
+  if (o.title) E("ttl", esc(o.title), card);
+  life(card, o.start, o.dur, { scale: 0.88, y: 24 }, { scale: 1, y: 0 }, 0.55, 0.4);
+  return { card, w, h, t: o.start + 0.35, full };
+}
+const BROLL = {
+  flow(o, S) {   // 流程/原理：节点依次弹出，箭头生长，数据包沿路径移动
+    const n = o.nodes || [], gapX = S.w / (n.length + 0.2), cy = S.h * 0.5, els = [];
+    n.forEach((nd, i) => {
+      const e = css(E("node", `<div class="b row emo">${nd.icon || "⚙️"}</div><div class="l">${esc(nd.label)}</div>`, S.card), { left: gapX * (i + 0.6) - 75 + "px", top: cy - 78 + "px" });
+      tl.fromTo(e, { opacity: 0, scale: 0.3, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: 0.6, ease: POP, immediateRender: true }, S.t + i * 0.45);
+      els.push(e);
+      if (i) {
+        const x0 = gapX * (i - 0.4) + 56, x1 = gapX * (i + 0.6) - 56, ln = css(E("lineA", "", S.card), { left: x0 + "px", top: cy - 22 + "px", width: x1 - x0 + "px" });
+        tl.fromTo(ln, { scaleX: 0 }, { scaleX: 1, duration: 0.35, ease: "power2.out", immediateRender: false }, S.t + i * 0.45 - 0.25);
+      }
+    });
+    const dot = E("dot", "", S.card); const tEnd = S.t + n.length * 0.45;
+    const xa = gapX * 0.6, xb = gapX * (n.length - 0.4);
+    css(dot, { left: xa - 13 + "px", top: cy - 25 + "px" });
+    tl.set(dot, { opacity: 1, x: 0 }, tEnd);
+    tl.to(dot, { x: xb - xa, duration: Math.max(0.8, (o.dur - (tEnd - o.start)) * 0.6), ease: "power1.inOut" }, tEnd);
+    tl.to(dot, { opacity: 0, duration: 0.2 }, tEnd + Math.max(0.8, (o.dur - (tEnd - o.start)) * 0.6));
+  },
+  compare(o, S) {   // 对比：左(旧/坑) vs 右(新/对)
+    [["left", o.left || {}, "var(--red)", 0], ["right", o.right || {}, "var(--green)", 1]].forEach(([side, d, col, k]) => {
+      const c = css(E("cmp glass", `<h4>${esc(d.title)}</h4><ul>${(d.items || []).map(x => `<li>${esc(x)}</li>`).join("")}</ul>`, S.card), side === "left" ? { left: "34px", borderColor: col } : { right: "34px", borderColor: col });
+      c.style.setProperty("--r", "26px");
+      tl.fromTo(c, { opacity: 0, x: side === "left" ? -40 : 40 }, { opacity: 1, x: 0, duration: 0.55, ease: SPRING, immediateRender: true }, S.t + k * 0.7);
+      tl.fromTo(c.querySelectorAll("li"), { opacity: 0, x: -14 }, { opacity: 1, x: 0, stagger: 0.28, duration: 0.35, immediateRender: false }, S.t + k * 0.7 + 0.35);
+    });
+    const vs = css(E("", "VS", S.card), { position: "absolute", left: "50%", top: "50%", marginLeft: "-26px", marginTop: "-20px", fontWeight: 900, fontSize: "30px", opacity: 0, color: "#fff" });
+    tl.fromTo(vs, { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.5, ease: POP, immediateRender: true }, S.t + 0.5);
+  },
+  stat(o, S) {   // 数据：大数字滚动
+    const num = css(E("bignum", "0", S.card), { top: S.h * 0.22 + "px", fontSize: (S.full ? 190 : 120) + "px", color: "var(--accent)" });
+    const lb = css(E("", esc(o.label), S.card), { position: "absolute", left: 0, right: 0, top: S.h * (S.full ? 0.62 : 0.68) + "px", textAlign: "center", fontSize: "32px", fontWeight: 700, opacity: 0 });
+    const obj = { v: 0 }, to = Number(o.value) || 0, dec = o.decimals || 0;
+    tl.to(obj, { v: to, duration: 1.3, ease: "power2.out", onUpdate: () => { num.textContent = (o.prefix || "") + obj.v.toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (o.suffix || ""); } }, S.t);
+    tl.fromTo(num, { scale: 0.7 }, { scale: 1, duration: 0.8, ease: POP, immediateRender: false }, S.t);
+    tl.to(lb, { opacity: 1, duration: 0.4 }, S.t + 0.8);
+  },
+  checklist(o, S) {   // 清单：逐项打钩
+    const items = o.items || [], top0 = 90, step = Math.min(84, (S.h - top0 - 30) / items.length);
+    items.forEach((it, i) => {
+      const r = css(E("cki row", `<div class="box row">✓</div><div>${esc(it)}</div>`, S.card), { top: top0 + i * step + "px" });
+      const bx = r.querySelector(".box"), tt = S.t + i * 0.55;
+      tl.fromTo(r, { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.4, ease: SMOOTH, immediateRender: true }, tt);
+      tl.set(bx, { color: "transparent" }, 0);
+      tl.to(bx, { backgroundColor: "#30D158", borderColor: "#30D158", color: "#fff", duration: 0.25 }, tt + 0.35);
+      tl.fromTo(bx, { scale: 0.7 }, { scale: 1, duration: 0.5, ease: POP, immediateRender: false }, tt + 0.35);
+    });
+  },
+  mascot(o, S) {   // 萌系表情角色 + 对话气泡（解释情绪点/小贴士）
+    const ch = css(E("emo", o.emoji || "🤔", S.card), { position: "absolute", left: S.w * 0.08 + "px", top: S.h * 0.34 + "px", fontSize: (S.full ? 220 : 130) + "px", opacity: 0, lineHeight: 1 });
+    const bw = S.w * 0.52;
+    const bub = css(E("glass", `<div style="padding:24px 30px;font-size:${S.full ? 40 : 28}px;font-weight:750;line-height:1.35">${esc(o.text)}</div>`, S.card), { left: S.w * 0.4 + "px", top: S.h * 0.28 + "px", width: bw + "px", borderRadius: "30px", opacity: 0 });
+    tl.fromTo(ch, { opacity: 0, scale: 0.2, y: 60 }, { opacity: 1, scale: 1, y: 0, duration: 0.7, ease: POP, immediateRender: true }, S.t);
+    tl.to(ch, { y: -18, scaleY: 1.06, scaleX: 0.96, duration: 0.45, yoyo: true, repeat: Math.max(1, Math.floor((o.dur - 1.2) / 0.9)), ease: "sine.inOut" }, S.t + 0.8);
+    tl.fromTo(bub, { opacity: 0, scale: 0.6, x: -30 }, { opacity: 1, scale: 1, x: 0, duration: 0.55, ease: SPRING, immediateRender: true }, S.t + 0.45);
+    ["✨", "⭐", "💫"].forEach((s, i) => {   // 星光粒子（确定性随机）
+      const sp = css(E("emo", s, S.card), { position: "absolute", left: S.w * (0.06 + R() * 0.3) + "px", top: S.h * (0.12 + R() * 0.2) + "px", fontSize: "34px", opacity: 0 });
+      tl.fromTo(sp, { opacity: 0, scale: 0, rotation: -40 }, { opacity: 1, scale: 1, rotation: 20, duration: 0.5, ease: POP, immediateRender: true }, S.t + 0.9 + i * 0.25);
+      tl.to(sp, { opacity: 0, y: -30, duration: 0.5 }, S.t + 1.6 + i * 0.25);
+    });
+  },
+  warning(o, S) {   // 警示：抖动的三角 + 错误/正确做法
+    const ic = css(E("emo", "⚠️", S.card), { position: "absolute", left: "50%", top: S.h * 0.12 + "px", marginLeft: "-60px", fontSize: "110px", lineHeight: 1, opacity: 0 });
+    tl.fromTo(ic, { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.6, ease: POP, immediateRender: true }, S.t);
+    tl.to(ic, { rotation: 8, duration: 0.07, yoyo: true, repeat: 7, ease: "none" }, S.t + 0.6);
+    const msg = css(E("", esc(o.text), S.card), { position: "absolute", left: "30px", right: "30px", top: S.h * 0.5 + "px", textAlign: "center", fontSize: "38px", fontWeight: 800, opacity: 0, lineHeight: 1.3 });
+    tl.fromTo(msg, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.45, immediateRender: true }, S.t + 0.5);
+    if (o.fix) {
+      const f = css(E("", "✅ " + esc(o.fix), S.card), { position: "absolute", left: "30px", right: "30px", top: S.h * 0.74 + "px", textAlign: "center", fontSize: "30px", fontWeight: 700, color: "var(--green)", opacity: 0 });
+      tl.fromTo(f, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.45, immediateRender: true }, S.t + 1.4);
+    }
+  },
+  timeline(o, S) {   // 路线图：圆点逐个点亮
+    const st = o.steps || [], y = S.h * 0.5, x0 = 110, x1 = S.w - 110;
+    const base = css(E("lineA", "", S.card), { left: x0 + "px", top: y - 3 + "px", width: x1 - x0 + "px", background: "rgba(255,255,255,.22)" });
+    const prog = css(E("lineA", "", S.card), { left: x0 + "px", top: y - 3 + "px", width: x1 - x0 + "px" });
+    tl.fromTo(prog, { scaleX: 0 }, { scaleX: 1, duration: st.length * 0.5, ease: "none", immediateRender: false }, S.t);
+    st.forEach((s, i) => {
+      const x = x0 + (x1 - x0) * (st.length === 1 ? 0 : i / (st.length - 1));
+      const dt = css(E("", "", S.card), { position: "absolute", left: x - 16 + "px", top: y - 16 + "px", width: "32px", height: "32px", borderRadius: "50%", background: "#fff", boxShadow: "0 0 0 6px rgba(10,132,255,.45)", opacity: 0 });
+      const lb = css(E("", esc(s), S.card), { position: "absolute", left: x - 90 + "px", width: "180px", textAlign: "center", top: (i % 2 ? y + 34 : y - 84) + "px", fontSize: "24px", fontWeight: 700, opacity: 0 });
+      tl.fromTo(dt, { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.45, ease: POP, immediateRender: true }, S.t + i * 0.5);
+      tl.fromTo(lb, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, immediateRender: true }, S.t + i * 0.5 + 0.1);
+    });
+  },
+  custom(o, S) {   // AI 自定义：html 片段 + 脚本函数体 (tl, card, S, gsap)
+    S.card.insertAdjacentHTML("beforeend", o.html || "");
+    if (o.script) new Function("tl", "card", "S", "gsap", o.script)(tl, S.card, S, gsap);
+  },
+};
+P.overlays.filter(o => o.type === "broll").forEach(o => { const S = brollShell(o); (BROLL[o.kind] || BROLL.custom)(o, S); });
+
+/* ---------- 快进提示 ---------- */
+P.speed_zones.filter(z => z.end - z.start > 0.6).forEach(z => {
+  const p = css(E("glass pill row abs", `<span class="emo">⏩</span><span>${z.speed.toFixed(z.speed % 1 ? 1 : 0)}× 快进</span>`, null), { right: "90px", bottom: "190px" });
+  tl.fromTo(p, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.3, immediateRender: true }, z.start);
+  tl.to(p, { opacity: 0, duration: 0.25 }, z.end - 0.25);
+});
+
+/* ---------- 结尾互动 CTA ---------- */
+(function cta() {
+  const c = P.cta; if (!c) return;
+  const items = c.items || ["点赞", "关注", "评论区聊聊"], icons = c.icons || ["👍", "🔔", "💬"];
+  const w = items.length * 250 + 40;
+  const wrap = css(E("glass cta row abs", "", null), { left: "50%", marginLeft: -w / 2 + "px", top: Math.round(DH * 0.3) + "px", width: w + "px", height: "250px", padding: "50px 20px 0", gap: "20px", justifyContent: "center", alignItems: "flex-start", borderRadius: "44px" });
+  const head = css(E("", esc(c.text || "觉得有用？"), wrap), { position: "absolute", left: 0, right: 0, top: "-74px", textAlign: "center", fontSize: "50px", fontWeight: 850, color: "#fff", textShadow: "0 4px 20px rgba(0,0,0,.6)" }); head.setAttribute("data-layout-allow-overflow", ""); head.setAttribute("data-layout-allow-overlap", "");
+  const btns = items.map((it, i) => E("glass btn", `<span class="e emo">${icons[i] || "✨"}</span><span class="w">${esc(it)}</span>`, wrap)); btns.forEach(b => { b.style.position = "relative"; });
+  tl.fromTo(wrap, { opacity: 0, scale: 0.85, y: 40 }, { opacity: 1, scale: 1, y: 0, duration: 0.6, ease: SPRING, immediateRender: true }, c.start);
+  tl.fromTo(head, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, immediateRender: false }, c.start + 0.15);
+  btns.forEach((b, i) => {
+    tl.fromTo(b, { scale: 0.3, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: POP, immediateRender: false }, c.start + 0.4 + i * 0.25);
+    tl.to(b.querySelector(".e"), { scale: 1.25, rotation: i === 0 ? -14 : 0, duration: 0.3, yoyo: true, repeat: 3, ease: "sine.inOut" }, c.start + 1.4 + i * 0.5);
+  });
+})();
+
+window.__timelines["main"] = tl;
+tl.seek(0);
+</script>
+</body>
+</html>
